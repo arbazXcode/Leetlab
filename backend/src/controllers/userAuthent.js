@@ -21,9 +21,17 @@ const register = async (req, res) => {
         });
         const token = jwt.sign({ _id: user._id, emailId: emailId, role: user.role }, process.env.JWT_KEY, { expiresIn: '1h' });
 
+        const reply = {
+            firstName: user.firstName,
+            emailId: user.emailId,
+            _id: user._id
+        }
         res.cookie('token', token, { maxAge: 60 * 60 * 1000, httpOnly: true });
 
-        res.status(201).send("User registered successfully.");
+        res.status(201).json({
+            user: reply,
+            message: "User registered successfully"
+        })
     } catch (error) {
         res.status(400).send("Error: " + error.message);
     }
@@ -40,11 +48,20 @@ const login = async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) throw new Error("Invalid credentials.");
 
+        const reply = {
+            firstName: user.firstName,
+            emailId: user.emailId,
+            _id: user._id
+        }
+
         const token = jwt.sign({ _id: user._id, emailId: user.emailId, role: user.role }, process.env.JWT_KEY, { expiresIn: '1h' });
 
         res.cookie('token', token, { maxAge: 60 * 60 * 1000, httpOnly: true });
 
-        res.status(200).send("Logged in successfully.");
+        res.status(201).json({
+            user: reply,
+            message: "Logged in successfully."
+        })
     } catch (error) {
         res.status(401).send("Error: " + error.message);
     }
