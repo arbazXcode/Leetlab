@@ -13,13 +13,18 @@ const userSchema = new Schema({
         minLength: 3,
         maxLength: 20
     },
-    emailId: {
+    email: {
         type: String,
         required: true,
         unique: true,
         trim: true,
         lowercase: true,
         immutable: true
+    },
+    // Keep emailId for backward compatibility but don't use it
+    emailId: {
+        type: String,
+        sparse: true // This allows multiple null values
     },
     age: {
         type: Number,
@@ -38,7 +43,7 @@ const userSchema = new Schema({
                 ref: "problem"
             }
         ],
-        unique: true
+        default: []
     },
     password: {
         type: String,

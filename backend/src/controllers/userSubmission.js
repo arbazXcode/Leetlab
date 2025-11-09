@@ -8,7 +8,7 @@ const { getLanguageById, submitBatch, submitToken } = require("../utils/problemU
 
 const submitCode = async (req, res) => {
     try {
-        const userId = req.result._id
+        const userId = req.user._id
         const problemId = req.params.id
 
         const { code, language } = req.body
@@ -74,9 +74,9 @@ const submitCode = async (req, res) => {
 
         await submittedResult.save()
 
-        if (!req.result.problemSolved.includes(problemId)) {
-            req.result.problemSolved.push(problemId)
-            await req.result.save()
+        if (!req.user.problemSolved.includes(problemId)) {
+            req.user.problemSolved.push(problemId)
+            await req.user.save()
         }
 
         res.status(201).send(submittedResult)
@@ -88,7 +88,7 @@ const submitCode = async (req, res) => {
 
 const runcode = async (req, res) => {
     try {
-        const userId = req.result._id
+        const userId = req.user._id
         const problemId = req.params.id
 
         const { code, language } = req.body

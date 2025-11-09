@@ -1,7 +1,7 @@
-const redisClient = require("./redisClient")
+const redisClient = require("../config/redis.js")
 
 const submitCodeRateLimitter = async (req, res, next) => {
-    const userId = req.result._id
+    const userId = req.user._id
     const redisKey = `submit_cooldown:${userId}`
 
     try {

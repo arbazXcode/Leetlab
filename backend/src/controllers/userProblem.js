@@ -43,7 +43,7 @@ const createProblem = async (req, res) => {
         //we can store it in our DB
         const userProblem = await Problem.create({
             ...req.body,
-            problemCreator: req.result._id
+            problemCreator: req.user._id
         })
 
         res.status(201).json({
@@ -105,13 +105,13 @@ const updateProblem = async (req, res) => {
 };
 
 const deleteProblem = async (req, res) => {
-    const { id } = req.params
+    const { pid } = req.params
 
     try {
-        if (!id)
+        if (!pid)
             return res.status(400).send("id missing")
 
-        const deletedProblem = await Problem.findByIdAndDelete(id)
+        const deletedProblem = await Problem.findByIdAndDelete(pid)
 
         if (!deletedProblem)
             return res.status(404).send("problem is missing")
@@ -157,7 +157,7 @@ const getAllProblems = async (req, res) => {
 
 const solvedAllProblemByUser = async (req, res) => {
     try {
-        const userId = req.result._id
+        const userId = req.user._id
         const user = await User.findById(userId).populate({
             path: "problemSolved",
             select: "_id title difficulty tags"
@@ -171,13 +171,13 @@ const solvedAllProblemByUser = async (req, res) => {
 
 const submittedProblem = async (req, res) => {
     try {
-        const userId = req.result._id
-        const problemId = req.params.pid
+        const userId = req.user._id
+        const problemId = req.params.id
 
         const ans = await Submission.find({ userId, problemId })
 
         if (ans.length == 0) {
-            res.status(200).send("no submission present")
+            return res.status(200).send("no submission present")
         }
 
         res.status(200).send(ans)
