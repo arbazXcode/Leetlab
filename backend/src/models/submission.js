@@ -4,12 +4,12 @@ const Schema = mongoose.Schema
 const submissionSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
-        ref: "user",
+        ref: "User",
         required: true,
     },
     problemId: {
         type: Schema.Types.ObjectId,
-        ref: "problem",
+        ref: "Problem",
         required: true
     },
     code: {
@@ -50,5 +50,5 @@ const submissionSchema = new Schema({
 
 submissionSchema.index({ userId: 1, problemId: 1 })
 
-const Submission = mongoose.model("submission", submissionSchema)
+const Submission = mongoose.model("Submission", submissionSchema)
 module.exports = Submission

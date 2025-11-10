@@ -1,6 +1,3 @@
-
-
-
 const User = require('../models/user.js');
 const validate = require('../utils/validator.js');
 const bcrypt = require('bcrypt');
@@ -25,28 +22,17 @@ const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
         const user = await User.create({
-            ...req.body,
-            password: hashedPassword
+            firstName,
+            email,
+            password: hashedPassword,
+            role: 'user'
         });
-
-        const token = jwt.sign(
-            { _id: user._id, email: user.email, role: user.role },
-            process.env.JWT_KEY,
-            { expiresIn: '1h' }
-        );
 
         const reply = {
             firstName: user.firstName,
             email: user.email,
             _id: user._id
         };
-
-        res.cookie('token', token, {
-            maxAge: 60 * 60 * 1000,
-            httpOnly: true,
-            sameSite: 'lax', // Allow cross-origin requests
-            secure: false // Set to true in production with HTTPS
-        });
 
         res.status(201).json({
             user: reply,
@@ -82,8 +68,8 @@ const login = async (req, res) => {
             { expiresIn: '1h' }
         );
 
-        res.cookie('token', token, { 
-            maxAge: 60 * 60 * 1000, 
+        res.cookie('token', token, {
+            maxAge: 60 * 60 * 1000,
             httpOnly: true,
             sameSite: 'lax',
             secure: false
@@ -106,13 +92,13 @@ const logout = async (req, res) => {
 
         const payload = jwt.decode(token);
         if (payload && payload.exp) {
-            await redisClient.set(`token:${token}`, 'blocked', {
+            await redisClient.client.set(`token:${token}`, 'blocked', {
                 EXAT: payload.exp
             });
         }
 
-        res.clearCookie('token', { 
-            httpOnly: true, 
+        res.clearCookie('token', {
+            httpOnly: true,
             path: '/',
             sameSite: 'lax',
             secure: false
@@ -125,30 +111,74 @@ const logout = async (req, res) => {
 };
 
 // ---------------- ADMIN REGISTER ----------------
+// const adminRegister = async (req, res) => {
+//     try {
+//         validate(req.body);
+//         const { email, password, role } = req.body;
+//         if (role && !['user', 'admin'].includes(role)) {
+//             throw new Error("Invalid role specified. Can be 'user' or 'admin'.");
+//         }
+
+//         const existingUser = await User.findOne({ email });
+//         if (existingUser) {
+//             return res.status(409).send("Error: An account with this email already exists.");
+//         }
+
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         await User.create({
+//             ...req.body,
+//             password: hashedPassword,
+//         });
+
+//         res.status(201).send("New user registered successfully by admin.");
+//     } catch (error) {
+//         res.status(400).send("Error: " + error.message);
+//     }
+// };
+
 const adminRegister = async (req, res) => {
     try {
-        validate(req.body);
-        const { email, password, role } = req.body;
-        if (role && !['user', 'admin'].includes(role)) {
-            throw new Error("Invalid role specified. Can be 'user' or 'admin'.");
-        }
+        const { firstName, email, password, role } = req.body;
 
+        // Basic validation
+        if (!firstName || !email || !password) {
+            return res.status(400).json({ error: "First name, email, and password are required." });
+        }
+        //if admin koin role ni bhejta, default role user kar do.
+        const finalRole = role && ['user', 'admin'].includes(role) ? role : 'user'
+
+        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(409).send("Error: An account with this email already exists.");
+            return res.status(409).json({ error: "Account with this email already exists." });
         }
 
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-        await User.create({
-            ...req.body,
+
+        // Create new user/admin
+        const newUser = await User.create({
+            firstName,
+            email,
             password: hashedPassword,
+            role: finalRole
         });
 
-        res.status(201).send("New user registered successfully by admin.");
+        res.status(201).json({
+            message: `New ${finalRole} registered successfully by admin.`,
+            user: {
+                _id: newUser._id,
+                email: newUser.email,
+                role: newUser.role,
+            },
+        });
     } catch (error) {
-        res.status(400).send("Error: " + error.message);
+        console.error("Admin Register Error:", error.message);
+        res.status(500).json({ error: "Error: " + error.message });
     }
 };
+
+
 
 // ---------------- DELETE PROFILE ----------------
 const deleteProfile = async (req, res) => {

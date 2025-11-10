@@ -5,37 +5,43 @@ const authRouter = require('./routes/userAuth.js')
 const problemRouter = require("./routes/problemCreator.js")
 const dbConnect = require('./config/db.js')
 const cookieParser = require('cookie-parser')
-const redisClient = require('./config/redis.js')
+const { client: redisClient, connect: connectRedis, isConfigured } = require('./config/redis.js');
 const submitRouter = require("./routes/submit.js")
 const port = process.env.PORT || 3000
 const cors = require("cors")
+const mongoose = require("mongoose")
 
 
 // Middlewares
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        // callback(error, allow) syntax of callback
-        if (!origin) return callback(null, true);
-
-        // Allow localhost on any port
-        if (origin.match(/^https?:\/\/(localhost|127\.0\.0\.1):[0-9]+$/)) {
-            return callback(null, true);
-        }
-
-        callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true, // Required if using cookies/sessions
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
+    origin: "http://localhost:3000", // your frontend origin
+    credentials: true,               // allow cookies / tokens
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
 
 // Routes
 app.use('/user', authRouter)
 app.use('/problem', problemRouter)
 app.use('/submission', submitRouter)
+
+app.get('/health', async (req, res) => {
+    try {
+        const mongoStatus = mongoose.connection?.readyState === 1 ? 'connected' : 'disconnected';
+        let redisStatus = 'not configured';
+
+        if (isConfigured) {
+            await connectRedis();
+            const pong = await redisClient.ping();
+            redisStatus = pong;
+        }
+
+        res.status(200).json({ status: 'OK', mongo: mongoStatus, redis: redisStatus });
+    } catch (e) {
+        res.status(500).json({ status: 'FAIL', message: e.message });
+    }
+});
 
 const initializeConnection = async () => {
     try {

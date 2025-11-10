@@ -40,7 +40,7 @@ const userSchema = new Schema({
         type: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "problem"
+                ref: "Problem"
             }
         ],
         default: []
@@ -53,9 +53,9 @@ const userSchema = new Schema({
 
 userSchema.post("findOneAndDelete", async function (doc) {
     if (doc) {
-        await mongoose.model("submission").deleteMany({ userId: doc._id })
+        await mongoose.model("Submission").deleteMany({ userId: doc._id })
     }
 })
 
-const User = mongoose.model("user", userSchema);
+const User = mongoose.model("User", userSchema);
 module.exports = User;

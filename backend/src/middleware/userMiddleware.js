@@ -1,40 +1,23 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.js');
 const redisClient = require('../config/redis.js');
+const User = require('../models/user.js');
 
 const userMiddleware = async (req, res, next) => {
     try {
-        const { token } = req.cookies;
+        const token = req.cookies.token;
+        if (!token) return res.status(401).json({ error: 'No token provided' });
 
-        if (!token) {
-            return res.status(401).json({
-                error: "Authorization Error: Token not found"
-            });
-        }
+        const isBlocked = await redisClient.client.get(`token:${token}`);
+        if (isBlocked) return res.status(403).json({ error: 'Token is blocked' });
 
-        const isBlocked = await redisClient.exists(`token:${token}`);
-        if (isBlocked) {
-            return res.status(401).json({
-                error: "Authorization Error: Session expired"
-            });
-        }
+        const decoded = jwt.verify(token, process.env.JWT_KEY);
+        const user = await User.findById(decoded._id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
 
-        const payload = jwt.verify(token, process.env.JWT_KEY);
-        const user = await User.findById(payload._id).select('-password');
-
-        if (!user) {
-            return res.status(401).json({
-                error: "Authorization Error: User not found"
-            });
-        }
-
-        req.user = user; // Standardize to req.user instead of req.result
+        req.user = user;
         next();
-    } catch (error) {
-        console.error("Middleware error:", error);
-        return res.status(401).json({
-            error: `Authorization Error: ${error.message}`
-        });
+    } catch (err) {
+        res.status(401).json({ error: `Authorization Error: ${err.message}` });
     }
 };
 

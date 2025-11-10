@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, logout, adminRegister, deleteProfile } = require('../controllers/userAuthent.js');
+const { register, login, logout, getProfile, adminRegister, deleteProfile } = require('../controllers/userAuthent.js');
 const userMiddleware = require('../middleware/userMiddleware.js');
 const adminMiddleware = require('../middleware/adminMiddleware.js');
 
@@ -9,6 +9,7 @@ const authRouter = express.Router();
 authRouter.post('/register', register);
 authRouter.post('/login', login);
 authRouter.post('/logout', userMiddleware, logout);
+// authRouter.post('/getProfile', userMiddleware, getProfile);
 
 authRouter.post('/admin/register', adminMiddleware, adminRegister);
 authRouter.delete("/deleteprofile", userMiddleware, deleteProfile)

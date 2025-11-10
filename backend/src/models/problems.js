@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const {Schema} = mongoose;
+const { Schema } = mongoose;
 
 const problemSchema = new mongoose.Schema({
     title: {
@@ -20,7 +20,7 @@ const problemSchema = new mongoose.Schema({
     },
     tags: {
         type: [String],
-        enum: ['array','linked list', 'dp', 'graph'],
+        enum: ['array', 'linked list', 'dp', 'graph'],
         default: [],
         required: true
     },
@@ -31,9 +31,9 @@ const problemSchema = new mongoose.Schema({
         },
         output: {
             type: String,
-            required:true
+            required: true
         },
-        explanation : {
+        explanation: {
             type: String,
             required: true
         }
@@ -45,40 +45,40 @@ const problemSchema = new mongoose.Schema({
         },
         output: {
             type: String,
-            required:true
+            required: true
         }
     }],
-    startCode : [
+    startCode: [
         {
             language: {
                 type: String,
                 required: true,
             },
-            initialCode : {
+            initialCode: {
                 type: String,
-                required : true
+                required: true
             }
         }
     ],
-    problemCreator : {
+    problemCreator: {
         type: Schema.Types.ObjectId,
-        ref : 'user',
-        required : true
+        ref: 'User',
+        required: true
     },
-    referenceSolution : [
+    referenceSolution: [
         {
             language: {
                 type: String,
                 required: true,
             },
-            completeCode : {
+            completeCode: {
                 type: String,
-                required : true
+                required: true
             }
         }
     ]
 }, { timestamps: true });
 
-const Problem = mongoose.model('problem', problemSchema);
+const Problem = mongoose.model('Problem', problemSchema);
 
 module.exports = Problem;

@@ -9,8 +9,8 @@ const adminMiddleware = async (req, res, next) => {
             throw new Error("Token not found. Please log in.");
         }
 
-        const isBlocked = await redisClient.exists(`token:${token}`);
-        if (isBlocked) {
+        const isBlocked = await redisClient.client.get(`token:${token}`);
+        if (isBlocked == 'blocked') {
             throw new Error("Token is blocked. Please log in again.");
         }
 
@@ -24,7 +24,7 @@ const adminMiddleware = async (req, res, next) => {
             throw new Error("Admin user not found.");
         }
 
-        req.result = admin; // Attach admin user info to the request object
+        req.user = admin; // Attach admin user info to the request object
         next();
 
     } catch (error) {
