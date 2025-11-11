@@ -43,7 +43,7 @@ const waiting = async (timer) => {
 }
 
 const submitToken = async (resultTokens) => {
-    const tokens = resultTokens.join(",");
+    // const tokens = resultTokens.join(",");
     const options = {
         method: 'GET',
         url: `https://${process.env.RAPIDAPI_HOST}/submissions/batch`,
@@ -76,8 +76,6 @@ const submitToken = async (resultTokens) => {
         }
         await waiting(1000)
     }
-
-
 };
 
-module.exports = { getLanguageById, submitBatch, submitToken };
+module.exports = { getLanguageById, submitBatch, submitToken, };

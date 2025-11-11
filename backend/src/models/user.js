@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
-
 const userSchema = new Schema({
     firstName: {
         type: String,
@@ -43,6 +42,7 @@ const userSchema = new Schema({
                 ref: "Problem"
             }
         ],
+        unique: true,
         default: []
     },
     password: {
@@ -51,9 +51,9 @@ const userSchema = new Schema({
     }
 }, { timestamps: true });
 
-userSchema.post("findOneAndDelete", async function (doc) {
-    if (doc) {
-        await mongoose.model("Submission").deleteMany({ userId: doc._id })
+userSchema.post("findOneAndDelete", async function (userInfo) {
+    if (userInfo) {
+        await mongoose.model("Submission").deleteMany({ userId: userInfo._id })
     }
 })
 

@@ -18,13 +18,13 @@ const userMiddleware = require("../middleware/userMiddleware.js");
 
 problemRouter.post("/create", adminMiddleware, createProblem);
 problemRouter.put("/update/:id", adminMiddleware, updateProblem);
-problemRouter.delete("/delete/:id", adminMiddleware, deleteProblem);
+problemRouter.delete("/delete/:pid", adminMiddleware, deleteProblem);
 
 
 
 problemRouter.get("/getProblemById/:id", userMiddleware, getProblemById);
 problemRouter.get("/getAllProblem", userMiddleware, getAllProblems);
 problemRouter.get("/problemSolvedByUser", userMiddleware, solvedAllProblemByUser);
-problemRouter.get("/submittedProblem/:id", userMiddleware, submittedProblem)
+problemRouter.get("/submittedProblem/:pid", userMiddleware, submittedProblem)
 
 module.exports = problemRouter;

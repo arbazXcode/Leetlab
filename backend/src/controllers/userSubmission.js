@@ -73,10 +73,11 @@ const submitCode = async (req, res) => {
         submittedResult.memory = memory
 
         await submittedResult.save()
+        const user = await User.findById(userId);
 
         if (!req.user.problemSolved.includes(problemId)) {
             req.user.problemSolved.push(problemId)
-            await req.user.save()
+            await user.save()
         }
 
         res.status(201).send(submittedResult)

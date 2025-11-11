@@ -12,26 +12,26 @@ authRouter.post('/logout', userMiddleware, logout);
 // authRouter.post('/getProfile', userMiddleware, getProfile);
 
 authRouter.post('/admin/register', adminMiddleware, adminRegister);
-authRouter.delete("/deleteprofile", userMiddleware, deleteProfile)
+authRouter.delete("/deleteProfile", userMiddleware, deleteProfile)
 // Add the check endpoint that was missing in your code
-authRouter.get("/check", userMiddleware, (req, res) => {
-    try {
-        const userData = {
-            firstName: req.user.firstName,
-            email: req.user.email,
-            _id: req.user._id
-        };
+// authRouter.get("/check", userMiddleware, (req, res) => {
+//     try {
+//         const userData = {
+//             firstName: req.user.firstName,
+//             email: req.user.email,
+//             _id: req.user._id
+//         };
 
-        res.status(200).json({
-            user: userData,
-            message: "Valid user"
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: "Server error during authentication check"
-        });
-    }
-});
+//         res.status(200).json({
+//             user: userData,
+//             message: "Valid user"
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             error: "Server error during authentication check"
+//         });
+//     }
+// });
 
 
 authRouter.get('/me', adminMiddleware, (req, res) => {

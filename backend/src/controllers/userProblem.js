@@ -1,9 +1,9 @@
-
+const mongoose = require("mongoose")
 const Problem = require("../models/problems.js");
 const User = require("../models/user.js");
 const { findById } = require("../models/user.js");
 const { getLanguageById, submitBatch, submitToken } = require('../utils/problemUtility.js');
-
+const Submission = require("../models/submission.js")
 const createProblem = async (req, res) => {
 
     const { title, description, difficulty, tags, visibleTestCases, hiddenTestCases, startCode
@@ -14,7 +14,7 @@ const createProblem = async (req, res) => {
 
         for (const { language, completeCode } of referenceSolution) {
             //source code
-            //languageId
+            //language_id
             //stdin:
             //expected_output;
             const languageId = getLanguageById(language)
@@ -105,6 +105,7 @@ const updateProblem = async (req, res) => {
 };
 
 const deleteProblem = async (req, res) => {
+
     const { pid } = req.params
 
     try {
@@ -123,27 +124,33 @@ const deleteProblem = async (req, res) => {
 };
 
 const getProblemById = async (req, res) => {
-    const { id } = req.params
-
     try {
-        if (!id)
-            return res.status(400).send("id missing")
+        const { id } = req.params;
 
-        const getProblem = await Problem.findById(id).select("_id title description difficulty tags visibleTestCases startCode referenceSolution")
+        if (!id) {
+            return res.status(400).json({ message: "Problem ID is missing" });
+        }
 
-        if (!getProblem)
-            return res.status(404).send("problem is missing")
+        const problem = await Problem.findById(id).select(
+            "_id title description difficulty tags visibleTestCases startCode referenceSolution"
+        );
 
-        res.status(200).send(getProblem)
+        if (!problem) {
+            return res.status(404).json({ message: "Problem not found" });
+        }
+
+        return res.status(200).json(problem);
     } catch (error) {
-        return res.status(500).send("Error" + error)
+        console.error("Error fetching problem:", error);
+        return res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 const getAllProblems = async (req, res) => {
 
     try {
-
+        //implement pagination ->do chatgpt
         const getProblem = await Problem.find({}).select("_id title tags difficulty")
 
         if (getProblem.length == 0)
@@ -172,9 +179,13 @@ const solvedAllProblemByUser = async (req, res) => {
 const submittedProblem = async (req, res) => {
     try {
         const userId = req.user._id
-        const problemId = req.params.id
+        const problemId = req.params.pid
 
-        const ans = await Submission.find({ userId, problemId })
+        // const ans = await Submission.find({ userId, problemId })
+        const ans = await Submission.find({
+            userId,
+            problemId
+        });
 
         if (ans.length == 0) {
             return res.status(200).send("no submission present")
@@ -182,8 +193,10 @@ const submittedProblem = async (req, res) => {
 
         res.status(200).send(ans)
     } catch (error) {
-        res.status(500).send("internal server error")
+        console.error("Error fetching submitted problems:", error);
+        res.status(500).send("Internal server error: " + error.message);
     }
+
 }
 
 module.exports = {

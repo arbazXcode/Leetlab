@@ -3,7 +3,7 @@ const validate = require('../utils/validator.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const redisClient = require('../config/redis.js');
-const Submission = require("../models/submission.js")
+// const Submission = require("../models/submission.js")
 
 
 const register = async (req, res) => {
