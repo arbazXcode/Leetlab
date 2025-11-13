@@ -1,5 +1,4 @@
 
-// ===== 1. FIXED authSlice.js =====
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import axiosClient from './utils/axiosClient.js'
 
@@ -8,7 +7,7 @@ export const registerUser = createAsyncThunk(
     'auth/registerUser',
     async (userData, { rejectWithValue }) => {
         try {
-            const response = await axiosClient.post('/auth/register', userData);
+            const response = await axiosClient.post('/user/register', userData);
             // Store token in localStorage
             localStorage.setItem('token', response.data.token);
             return response.data; // Should include user data and token
@@ -23,7 +22,7 @@ export const loginUser = createAsyncThunk(
     "auth/login",
     async (credentials, { rejectWithValue }) => {
         try {
-            const response = await axiosClient.post("/auth/login", credentials)
+            const response = await axiosClient.post("/user/login", credentials)
 
             // Store token if provided
             if (response.data.token) {
@@ -45,25 +44,30 @@ export const checkAuth = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             // Check if token exists before making request
-            const token = localStorage.getItem('token')
+            const token = localStorage.getItem("token");
             if (!token) {
-                return null
+                return null; // No token → user is not logged in
             }
 
-            const response = await axiosClient.get("/auth/check")
-            return response.data.user
+            // Correct route based on your backend setup
+            const response = await axiosClient.get("/user/check");
+
+            return response.data.user;
         } catch (error) {
             // Clear token on auth failure
             if (error.response?.status === 401) {
-                localStorage.removeItem('token')
-                sessionStorage.removeItem('token')
+                localStorage.removeItem("token");
+                sessionStorage.removeItem("token");
             }
             return rejectWithValue(
-                error.response?.data?.message || error.message || "Auth check failed"
-            )
+                error.response?.data?.message ||
+                error.message ||
+                "Auth check failed"
+            );
         }
     }
-)
+);
+
 
 // LOGOUT
 export const logoutUser = createAsyncThunk(
