@@ -9,9 +9,17 @@ const adminMiddleware = async (req, res, next) => {
             throw new Error("Token not found. Please log in.");
         }
 
-        const isBlocked = await redisClient.client.get(`token:${token}`);
-        if (isBlocked == 'blocked') {
-            throw new Error("Token is blocked. Please log in again.");
+        // Check Redis only if configured
+        if (redisClient.isConfigured && redisClient.client) {
+            try {
+                const isBlocked = await redisClient.client.get(`token:${token}`);
+                if (isBlocked == 'blocked') {
+                    throw new Error("Token is blocked. Please log in again.");
+                }
+            } catch (redisErr) {
+                // If Redis check fails, log but continue (don't block auth)
+                console.warn('Redis check failed, continuing without Redis:', redisErr.message);
+            }
         }
 
         const payload = jwt.verify(token, process.env.JWT_KEY);

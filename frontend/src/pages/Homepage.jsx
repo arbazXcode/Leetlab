@@ -11,10 +11,17 @@ function Homepage() {
 
   const [problems, setProblems] = useState([]);
   const [solvedProblems, setSolvedProblems] = useState([]);
+  const [filters, setFilters] = useState({
+    difficulty: "all",
+    tag: "all",
+    status: "all",
+    search: "",
+  });
   const [loading, setLoading] = useState(true);
 
   const handleLogout = () => {
     dispatch(logoutUser());
+    setSolvedProblems([]);
     navigate("/login");
   };
 
@@ -23,6 +30,8 @@ function Homepage() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        setSolvedProblems([]);
+
         const problemsRes = await axiosClient.get("/problem/getAllProblem");
         setProblems(problemsRes.data);
 
@@ -43,6 +52,41 @@ function Homepage() {
 
   // Check if a problem is solved
   const isSolved = (id) => solvedProblems.some((p) => p._id === id);
+
+  // Filter logic
+  const filteredProblems = problems.filter((problem) => {
+    const isSolvedProblem = isSolved(problem._id);
+
+    // Status filter
+    if (filters.status === "solved" && !isSolvedProblem) return false;
+    if (filters.status === "unsolved" && isSolvedProblem) return false;
+
+    // Difficulty filter
+    if (
+      filters.difficulty !== "all" &&
+      problem.difficulty.toLowerCase() !== filters.difficulty
+    ) {
+      return false;
+    }
+
+    // Tag filter (assuming each problem has tags: ["array", "string"])
+    if (
+      filters.tag !== "all" &&
+      !problem.tags?.some((tag) => tag.toLowerCase() === filters.tag)
+    ) {
+      return false;
+    }
+
+    // Search filter (title or tags)
+    if (
+      filters.search.trim() !== "" &&
+      !problem.title.toLowerCase().includes(filters.search.toLowerCase())
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
@@ -74,7 +118,7 @@ function Homepage() {
           to="/"
           className="text-2xl font-bold bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent"
         >
-          CodeExec
+          Leetlab
         </NavLink>
 
         <div className="flex items-center gap-4">
@@ -91,7 +135,7 @@ function Homepage() {
       </nav>
 
       {/* Welcome */}
-      <div className="max-w-4xl mx-auto px-4 py-10">
+      <div className="max-w-5xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-2">
           Welcome back,{" "}
           <span className="text-yellow-400">{user?.firstName || "Coder"}!</span>
@@ -108,6 +152,57 @@ function Homepage() {
           problems.
         </p>
 
+        {/* 🔍 Filter + Search Bar */}
+        <div className="flex flex-wrap gap-3 items-center justify-between mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
+          {/* Status Filter */}
+          <select
+            value={filters.status}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            className="bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-400"
+          >
+            <option value="all">All Problems</option>
+            <option value="solved">Solved Problems</option>
+            <option value="unsolved">Unsolved Problems</option>
+          </select>
+
+          {/* Difficulty Filter */}
+          <select
+            value={filters.difficulty}
+            onChange={(e) =>
+              setFilters({ ...filters, difficulty: e.target.value })
+            }
+            className="w-[140px] bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-400"
+          >
+            <option value="all">Difficulty</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+
+          {/* Tag Filter */}
+          <select
+            value={filters.tag}
+            onChange={(e) => setFilters({ ...filters, tag: e.target.value })}
+            className="bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-400 w-25"
+          >
+            <option value="all">Tags</option>
+            <option value="array">Array</option>
+            <option value="string">String</option>
+            <option value="linkedlist">Linked List</option>
+            <option value="dp">Dynamic Programming</option>
+            <option value="graph">Graph</option>
+          </select>
+
+          {/* Search Bar */}
+          <input
+            type="text"
+            placeholder="Search problems..."
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            className="flex-1 min-w-[200px] bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-400"
+          />
+        </div>
+
         {/* Problems Table */}
         <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-xl shadow-lg overflow-hidden">
           <div className="p-4 border-b border-white/10">
@@ -116,20 +211,19 @@ function Homepage() {
             </h2>
           </div>
 
-          {problems.length === 0 ? (
+          {filteredProblems.length === 0 ? (
             <div className="p-8 text-center text-gray-400">
               No problems found
             </div>
           ) : (
             <ul className="divide-y divide-white/10">
-              {problems.map((problem, index) => (
+              {filteredProblems.map((problem, index) => (
                 <li
                   key={problem._id}
                   onClick={() => navigate(`/problem/${problem._id}`)}
                   className="flex justify-between items-center px-6 py-4 hover:bg-white/10 transition cursor-pointer"
                 >
                   <div className="flex items-center gap-4">
-                    {/* Problem Number */}
                     <span className="text-gray-400 w-6 text-right">
                       {index + 1}.
                     </span>
@@ -156,11 +250,9 @@ function Homepage() {
                       <div className="w-5 h-5 border border-gray-500 rounded-full"></div>
                     )}
 
-                    {/* Problem Title */}
                     <span className="font-medium">{problem.title}</span>
                   </div>
 
-                  {/* Difficulty */}
                   <span
                     className={`text-sm font-semibold ${getDifficultyColor(
                       problem.difficulty

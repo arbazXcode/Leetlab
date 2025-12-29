@@ -1,14 +1,24 @@
 const axios = require("axios");
 
 const getLanguageById = (lang) => {
+    if (!lang) return null;
+
+    const key = String(lang).trim().toLowerCase();
+
     const languages = {
         "c++": 54,
+        "cpp": 54,
         "java": 62,
         "javascript": 63,
-        "python": 71
+        "node": 63,
+        "js": 63,
+        "python": 71,
+        "py": 71
     };
-    return languages[lang.toLowerCase()];
+
+    return languages[key] || null;
 };
+
 
 const submitBatch = async (submissions) => {
     const options = {

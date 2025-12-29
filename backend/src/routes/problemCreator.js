@@ -26,5 +26,6 @@ problemRouter.get("/getProblemById/:id", userMiddleware, getProblemById);
 problemRouter.get("/getAllProblem", userMiddleware, getAllProblems);
 problemRouter.get("/problemSolvedByUser", userMiddleware, solvedAllProblemByUser);
 problemRouter.get("/submittedProblem/:pid", userMiddleware, submittedProblem)
+problemRouter.get("/:id", getProblemById);
 
 module.exports = problemRouter;

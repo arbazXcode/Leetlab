@@ -5,7 +5,9 @@ import { checkAuth } from "./authSlice";
 import Signup from "./pages/Signup.jsx";
 import Login from "./pages/Login.jsx";
 import Homepage from "./pages/Homepage.jsx"; // Fixed import name
-
+import AdminPanel from "./pages/AdminPanel.jsx";
+import ProblemPage from "./pages/ProblemPage.jsx";
+import Footer from "./pages/Footer.jsx";
 // Loading component
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -36,15 +38,36 @@ const LoadingSpinner = () => (
 );
 
 // Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, initialized } = useSelector((state) => state.auth);
+// const ProtectedRoute = ({ children }) => {
+//   const { isAuthenticated, initialized } = useSelector((state) => state.auth);
+
+//   if (!initialized) {
+//     return <LoadingSpinner />;
+//   }
+
+//   if (!isAuthenticated) {
+//     return <Navigate to="/login" replace />;
+//   }
+
+//   return children;
+// };
+const ProtectedRoute = ({ children, adminOnly = false }) => {
+  const { isAuthenticated, initialized, user } = useSelector(
+    (state) => state.auth
+  );
 
   if (!initialized) {
     return <LoadingSpinner />;
   }
 
+  // Not logged in → block access
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Admin-only route protection
+  if (adminOnly && user?.role !== "admin") {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -74,44 +97,59 @@ function App() {
       dispatch(checkAuth());
     }
   }, [dispatch, initialized]);
+
   if (!initialized) {
     return <LoadingSpinner />;
   }
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route
-        path="/signup"
-        element={
-          <PublicRoute>
-            <Signup />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
+    <div className="min-h-screen flex flex-col bg-neutral-950">
+      <div className="flex-1">
+        <Routes>
+          {/* Public Routes */}
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <Signup />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
 
-      {/* Protected Routes */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Homepage />
-          </ProtectedRoute>
-        }
-      />
+          {/* Protected Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Homepage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute adminOnly={true}>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
 
-      {/* Catch all */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-      {/* <Route path="/admin" element={<AdminPanel />} /> */}
-    </Routes>
+          {/* Problem solving page */}
+          <Route path="/problem/:id" element={<ProblemPage />} />
+        </Routes>
+      </div>
+
+      {/* ✅ footer visible on all pages */}
+      <Footer />
+    </div>
   );
 }
 

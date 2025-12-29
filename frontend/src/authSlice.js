@@ -7,11 +7,23 @@ export const registerUser = createAsyncThunk(
     'auth/registerUser',
     async (userData, { rejectWithValue }) => {
         try {
-            const response = await axiosClient.post('/user/register', userData);
-            // Store token in localStorage
-            localStorage.setItem('token', response.data.token);
+            // Only send firstName, email, password (backend doesn't accept lastName)
+            const { firstName, email, password } = userData;
+            const response = await axiosClient.post('/user/register', { firstName, email, password });
+            
+            // Store token if provided
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token)
+            }
+            
             return response.data; // Should include user data and token
         } catch (error) {
+            // Handle network errors
+            if (!error.response) {
+                return rejectWithValue(
+                    "Network error. Please check if the backend server is running on http://localhost:3000"
+                )
+            }
             return rejectWithValue(error.response?.data?.message || 'Registration failed');
         }
     }
@@ -23,14 +35,20 @@ export const loginUser = createAsyncThunk(
     async (credentials, { rejectWithValue }) => {
         try {
             const response = await axiosClient.post("/user/login", credentials)
-
+            
             // Store token if provided
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token)
             }
-
+            
             return response.data.user
         } catch (error) {
+            // Handle network errors
+            if (!error.response) {
+                return rejectWithValue(
+                    "Network error. Please check if the backend server is running on http://localhost:3000"
+                )
+            }
             return rejectWithValue(
                 error.response?.data?.message || error.message || "Login failed"
             )
@@ -44,14 +62,8 @@ export const checkAuth = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             // Check if token exists before making request
-            const token = localStorage.getItem("token");
-            if (!token) {
-                return null; // No token → user is not logged in
-            }
-
-            // Correct route based on your backend setup
-            const response = await axiosClient.get("/user/check");
-
+            // Cookie exists automatically, no need to check
+            const response = await axiosClient.get("/user/check", { withCredentials: true });
             return response.data.user;
         } catch (error) {
             // Clear token on auth failure
@@ -141,13 +153,13 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false
-                state.isAuthenticated = !!action.payload
+                state.isAuthenticated = true
                 state.user = action.payload
                 state.error = null
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false
-                state.error = action.payload
+                state.error = action.payload || "Network error. Please check if the server is running."
                 state.isAuthenticated = false
                 state.user = null
             })
@@ -205,9 +217,15 @@ export default authSlice.reducer
 
 
 
+// respone me hota hai
 
-
-
+// const response = {
+//     data: {
+//         user: reply,
+//         message: "valid user"
+//     },
+//     status_code
+// }
 
 
 
@@ -277,7 +295,7 @@ export default authSlice.reducer
 //     "auth/logout",
 //     async (_, { rejectWithValue }) => {
 //         try {
-//             await axiosClient.post("/logout")
+//             await axiosClient.post("/user/logout")
 //             return null
 //         } catch (error) {
 //             return rejectWithValue(

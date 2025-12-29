@@ -1,4 +1,4 @@
-const User = require('../models/user.js');
+const User = require("../models/user.js")
 const validate = require('../utils/validator.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -6,84 +6,193 @@ const redisClient = require('../config/redis.js');
 // const Submission = require("../models/submission.js")
 
 
+// const register = async (req, res) => {
+//     try {
+//         validate(req.body);
+//         const { firstName, email, password } = req.body;
+
+//         if (!firstName || !email || !password) {
+//             return res.status(400).send("Error: Missing required fields");
+//         }
+
+//         const existingUser = await User.findOne({ email });
+//         if (existingUser) {
+//             return res.status(409).send("Error: An account with this email already exists.");
+//         }
+
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         const user = await User.create({
+//             firstName,
+//             email,
+//             password: hashedPassword,
+//             role: 'user'
+//         });
+
+//         const reply = {
+//             firstName: user.firstName,
+//             email: user.email,
+//             _id: user._id
+//         };
+
+//         res.status(201).json({
+//             user: reply,
+//             message: "User registered successfully"
+//         });
+
+//     } catch (error) {
+//         res.status(400).send("Error: " + error.message);
+//     }
+// };
+
+// ---------------- REGISTER ----------------
 const register = async (req, res) => {
     try {
-        validate(req.body);
+        // Validate body
         const { firstName, email, password } = req.body;
 
         if (!firstName || !email || !password) {
-            return res.status(400).send("Error: Missing required fields");
+            return res.status(400).json({ message: "Missing required fields" });
         }
 
+        // Check for existing user
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(409).send("Error: An account with this email already exists.");
+            return res
+                .status(409)
+                .json({ message: "An account with this email already exists." });
         }
 
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
         const user = await User.create({
             firstName,
             email,
             password: hashedPassword,
-            role: 'user'
+            role: "user",
         });
 
+        // Create JWT Token
+        const token = jwt.sign(
+            { _id: user._id, email: user.email, role: user.role },
+            process.env.JWT_KEY,
+            { expiresIn: "1h" }
+        );
+
+        // Send token in cookie (optional but good practice)
+        res.cookie("token", token, {
+            maxAge: 60 * 60 * 1000, // 1 hour
+            httpOnly: true,
+            sameSite: "lax",
+            secure: false, // true only if using HTTPS
+        });
+
+        // Clean user object for response
         const reply = {
             firstName: user.firstName,
             email: user.email,
-            _id: user._id
+            _id: user._id,
+            role: user.role
         };
 
+        //Send token + user back in response
         res.status(201).json({
+            message: "User registered successfully",
             user: reply,
-            message: "User registered successfully"
+            token, // <-- added token here
         });
-
     } catch (error) {
-        res.status(400).send("Error: " + error.message);
+        console.error("REGISTER ERROR:", error.message);
+        res.status(500).json({ message: "Error: " + error.message });
     }
 };
+
+// ---------------- LOGIN ----------------
+// const login = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+//         if (!email || !password) throw new Error("Email and password are required.");
+
+//         const user = await User.findOne({ email });
+//         if (!user) throw new Error("Invalid credentials.");
+
+//         const match = await bcrypt.compare(password, user.password);
+//         if (!match) throw new Error("Invalid credentials.");
+
+//         const reply = {
+//             firstName: user.firstName,
+//             email: user.email,
+//             _id: user._id
+//         };
+
+//         const token = jwt.sign(
+//             { _id: user._id, email: user.email, role: user.role },
+//             process.env.JWT_KEY,
+//             { expiresIn: '1h' }
+//         );
+
+//         res.cookie('token', token, {
+//             maxAge: 60 * 60 * 1000,
+//             httpOnly: true,
+//             sameSite: 'lax',
+//             secure: false
+//         });
+
+//         res.status(200).json({
+//             user: reply,
+//             message: "Logged in successfully."
+//         });
+//     } catch (error) {
+//         res.status(401).send("Error: " + error.message);
+//     }
+// };
 
 // ---------------- LOGIN ----------------
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) throw new Error("Email and password are required.");
+        if (!email || !password)
+            return res.status(400).json({ message: "Email and password required" });
 
         const user = await User.findOne({ email });
-        if (!user) throw new Error("Invalid credentials.");
+        if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
         const match = await bcrypt.compare(password, user.password);
-        if (!match) throw new Error("Invalid credentials.");
-
-        const reply = {
-            firstName: user.firstName,
-            email: user.email,
-            _id: user._id
-        };
+        if (!match)
+            return res.status(401).json({ message: "Invalid credentials" });
 
         const token = jwt.sign(
             { _id: user._id, email: user.email, role: user.role },
             process.env.JWT_KEY,
-            { expiresIn: '1h' }
+            { expiresIn: "1h" }
         );
 
-        res.cookie('token', token, {
+        res.cookie("token", token, {
             maxAge: 60 * 60 * 1000,
             httpOnly: true,
-            sameSite: 'lax',
-            secure: false
+            sameSite: "lax",
+            secure: false, //true kr do production me
+            path: "/"
         });
+
+        const reply = {
+            firstName: user.firstName,
+            email: user.email,
+            _id: user._id,
+            role: user.role
+        };
 
         res.status(200).json({
+            message: "Logged in successfully",
             user: reply,
-            message: "Logged in successfully."
+            token, // send token to frontend
         });
     } catch (error) {
-        res.status(401).send("Error: " + error.message);
+        console.error("LOGIN ERROR:", error.message);
+        res.status(401).json({ message: "Error: " + error.message });
     }
 };
-
 // ---------------- LOGOUT ----------------
 const logout = async (req, res) => {
     try {

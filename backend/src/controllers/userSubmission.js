@@ -75,10 +75,11 @@ const submitCode = async (req, res) => {
         await submittedResult.save()
         const user = await User.findById(userId);
 
-        if (!req.user.problemSolved.includes(problemId)) {
-            req.user.problemSolved.push(problemId)
+        if (!user.problemSolved.includes(problemId)) {
+            user.problemSolved.push(problemId)
             await user.save()
         }
+
 
         res.status(201).send(submittedResult)
 
@@ -87,39 +88,87 @@ const submitCode = async (req, res) => {
     }
 }
 
+// const runcode = async (req, res) => {
+//     try {
+//         const userId = req.user._id
+//         const problemId = req.params.id
+
+//         const { code, language } = req.body
+
+//         if (!userId || !code || !problemId || !language)
+//             return res.status(400).send("some field missing - from usersubmission.js")
+
+//         const problem = await Problem.findById(problemId)
+
+//         //judge0 ko code submit krna hai
+//         const languageId = getLanguageById(language)
+
+//         const submissions = problem.visibleTestCases.map((testcase) => ({
+//             source_code: code,
+//             language_id: languageId,
+//             stdin: testcase.input,
+//             expected_output: testcase.output
+//         }))
+
+//         const submitResult = await submitBatch(submissions)
+
+//         const resultToken = submitResult.map((value) => value.token)
+//         const testResult = await submitToken(resultToken)
+
+//         res.status(201).send(testResult)
+
+//     } catch (error) {
+//         res.status(500).send("Internal server error" + error)
+//     }
+// }
 const runcode = async (req, res) => {
     try {
-        const userId = req.user._id
-        const problemId = req.params.id
+        const userId = req.user?._id; // allow public run
+        const problemId = req.params.id;
 
-        const { code, language } = req.body
+        const { code, language, stdin } = req.body;
 
-        if (!userId || !code || !problemId || !language)
-            return res.status(400).send("some field missing - from usersubmission.js")
+        if (!code || !problemId || !language)
+            return res.status(400).send("Missing fields");
 
-        const problem = await Problem.findById(problemId)
+        const problem = await Problem.findById(problemId);
+        const languageId = getLanguageById(language);
 
-        //judge0 ko code submit krna hai
-        const languageId = getLanguageById(language)
+        // ✅ Detect custom input run
+        if (stdin) {
+            const submitResult = await submitBatch([
+                {
+                    source_code: code,
+                    language_id: languageId,
+                    stdin,
+                },
+            ]);
 
+            const token = submitResult[0].token;
+            const [result] = await submitToken([token]);
+
+            return res.status(200).json(result);
+        }
+
+        // ✅ Normal visible testcases execution
         const submissions = problem.visibleTestCases.map((testcase) => ({
             source_code: code,
             language_id: languageId,
             stdin: testcase.input,
-            expected_output: testcase.output
-        }))
+            expected_output: testcase.output,
+        }));
 
-        const submitResult = await submitBatch(submissions)
+        const submitResult = await submitBatch(submissions);
+        const resultToken = submitResult.map((value) => value.token);
+        const testResult = await submitToken(resultToken);
 
-        const resultToken = submitResult.map((value) => value.token)
-        const testResult = await submitToken(resultToken)
-
-        res.status(201).send(testResult)
-
+        return res.status(201).send(testResult);
     } catch (error) {
-        res.status(500).send("Internal server error" + error)
+        res.status(500).send("Internal server error: " + error.message);
     }
-}
+};
+
+
 
 module.exports = { submitCode, runcode }
 

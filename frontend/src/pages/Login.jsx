@@ -78,7 +78,7 @@ function Login() {
             <input
               type="email"
               placeholder="john@example.com"
-              className={`input input-bordered w-full bg-white/10 text-white border-gray-600 ${
+              className={`input input-bordered w-full bg-white/ vv10 text-white border-gray-600 ${
                 errors.email ? "border-red-500" : "focus:border-yellow-500"
               }`}
               {...register("email")}
@@ -91,7 +91,7 @@ function Login() {
           </div>
 
           {/* Password */}
-          <div className="form-control relative">
+          {/* <div className="form-control relative">
             <label className="label text-sm font-medium text-gray-300">
               Password
             </label>
@@ -143,6 +143,72 @@ function Login() {
                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7.999C20.268 16.057 16.478 19 12 19c-4.477 0-8.268-2.943-9.542-7z"
                   />
                 </svg>
+              )}
+            </button>
+            {errors.password && (
+              <span className="text-red-400 text-sm">
+                {errors.password.message}
+              </span>
+            )}
+          </div> */}
+          <div className="form-control relative">
+            <label className="label text-sm font-medium text-gray-300">
+              Password
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              className={`input input-bordered w-full bg-white/10 text-white border-gray-600 pr-10 ${
+                errors.password ? "border-red-500" : "focus:border-yellow-500"
+              }`}
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-10 text-gray-400 hover:text-yellow-400 flex items-center gap-1"
+            >
+              {showPassword ? (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3 3l18 18m-9-3c-5 0-9-3.5-9-7.5a8.973 8.973 0 012.538-5.977M9.88 9.88A3 3 0 0115 12m2.466 2.466A8.975 8.975 0 0121 12.5c0-4-4-7.5-9-7.5a8.978 8.978 0 00-5.977 2.538"
+                    />
+                  </svg>
+                  <span className="text-xs">Hide password</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="2"
+                    stroke="currentColor"
+                    className="w-5 h-5"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7.999C20.268 16.057 16.478 19 12 19c-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                  <span className="text-xs">Show password</span>
+                </>
               )}
             </button>
             {errors.password && (

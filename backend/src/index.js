@@ -13,13 +13,14 @@ const mongoose = require("mongoose")
 
 
 // Middlewares
-app.use(express.json())
-app.use(cookieParser())
 app.use(cors({
-    origin: "http://localhost:3000", // your frontend origin
+    origin: "http://localhost:5173",
     credentials: true,               // allow cookies / tokens
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 }));
+app.use(express.json())
+app.use(cookieParser())
+app.use(express.urlencoded({ extended: true }))
 
 // Routes
 app.use('/user', authRouter)
@@ -46,14 +47,12 @@ app.get('/health', async (req, res) => {
 const initializeConnection = async () => {
     try {
         await dbConnect()
-        console.log('MongoDB connected.')
         try {
             if (redisClient && typeof redisClient.connect === 'function') {
                 if (redisClient.isConfigured === false) {
                     console.warn('Redis is not configured. Skipping Redis connection.');
                 } else {
                     await redisClient.connect()
-                    console.log('Redis connected.')
                 }
             } else {
                 console.warn('Redis client does not expose a connect() method. Skipping Redis connection.');
@@ -63,7 +62,7 @@ const initializeConnection = async () => {
         }
 
         app.listen(port, () => {
-            console.log(`Server is listening at port number: ${port}`)
+            console.log(`server is running on ${process.env.PORT}`)
         })
 
     } catch (error) {
