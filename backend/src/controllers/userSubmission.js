@@ -4,6 +4,11 @@ const Submission = require("../models/submission.js")
 const User = require("../models/user.js")
 const { getLanguageById, submitBatch, submitToken } = require("../utils/problemUtility.js")
 
+function normalizeArrayInput(input) {
+    // "[1,2,3,1]" -> "4\n1 2 3 1"
+    const arr = JSON.parse(input);
+    return `${arr.length}\n${arr.join(" ")}`;
+}
 
 
 const submitCode = async (req, res) => {
@@ -33,8 +38,8 @@ const submitCode = async (req, res) => {
         const submissions = problem.hiddenTestCases.map((testcase) => ({
             source_code: code,
             language_id: languageId,
-            stdin: testcase.input,
-            expected_output: testcase.output
+            stdin: normalizeArrayInput(testcase.input),
+            expected_output: testcase.output + "\n"
         }))
 
         const submitResult = await submitBatch(submissions)
@@ -87,40 +92,6 @@ const submitCode = async (req, res) => {
         res.status(500).send("Internal server error" + error)
     }
 }
-
-// const runcode = async (req, res) => {
-//     try {
-//         const userId = req.user._id
-//         const problemId = req.params.id
-
-//         const { code, language } = req.body
-
-//         if (!userId || !code || !problemId || !language)
-//             return res.status(400).send("some field missing - from usersubmission.js")
-
-//         const problem = await Problem.findById(problemId)
-
-//         //judge0 ko code submit krna hai
-//         const languageId = getLanguageById(language)
-
-//         const submissions = problem.visibleTestCases.map((testcase) => ({
-//             source_code: code,
-//             language_id: languageId,
-//             stdin: testcase.input,
-//             expected_output: testcase.output
-//         }))
-
-//         const submitResult = await submitBatch(submissions)
-
-//         const resultToken = submitResult.map((value) => value.token)
-//         const testResult = await submitToken(resultToken)
-
-//         res.status(201).send(testResult)
-
-//     } catch (error) {
-//         res.status(500).send("Internal server error" + error)
-//     }
-// }
 const runcode = async (req, res) => {
     try {
         const userId = req.user?._id; // allow public run
@@ -140,7 +111,7 @@ const runcode = async (req, res) => {
                 {
                     source_code: code,
                     language_id: languageId,
-                    stdin,
+                    stdin: normalizeArrayInput(stdin),
                 },
             ]);
 
@@ -154,8 +125,8 @@ const runcode = async (req, res) => {
         const submissions = problem.visibleTestCases.map((testcase) => ({
             source_code: code,
             language_id: languageId,
-            stdin: testcase.input,
-            expected_output: testcase.output,
+            stdin: normalizeArrayInput(testcase.input),
+            expected_output: testcase.output + "\n",
         }));
 
         const submitResult = await submitBatch(submissions);
@@ -167,6 +138,7 @@ const runcode = async (req, res) => {
         res.status(500).send("Internal server error: " + error.message);
     }
 };
+
 module.exports = { submitCode, runcode }
 
 

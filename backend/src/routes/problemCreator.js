@@ -3,7 +3,6 @@ const problemRouter = express.Router();
 
 const adminMiddleware = require("../middleware/adminMiddleware.js");
 const userMiddleware = require("../middleware/userMiddleware.js");
-
 const {
     createProblem,
     updateProblem,

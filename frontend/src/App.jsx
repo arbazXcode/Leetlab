@@ -8,6 +8,8 @@ import Homepage from "./pages/Homepage.jsx"; // Fixed import name
 import AdminPanel from "./pages/AdminPanel.jsx";
 import ProblemPage from "./pages/ProblemPage.jsx";
 import Footer from "./pages/Footer.jsx";
+import EditProblem from "./pages/EditProblem";
+
 // Loading component
 const LoadingSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -137,6 +139,14 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute adminOnly={true}>
+                <AdminPanel />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/edit/:id"
+            element={
+              <ProtectedRoute adminOnly>
                 <AdminPanel />
               </ProtectedRoute>
             }

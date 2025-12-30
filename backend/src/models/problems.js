@@ -20,7 +20,36 @@ const problemSchema = new mongoose.Schema({
     },
     tags: {
         type: [String],
-        enum: ['array', 'linked list', 'dp', 'graph'],
+        enum: [
+            // Data Structures
+            "array",
+            "string",
+            "linked list",
+            "stack",
+            "queue",
+            "heap",
+            "tree",
+            "graph",
+            "matrix",
+
+            // Techniques
+            "two pointers",
+            "sliding window",
+            "bit manipulation",
+            "hashing",
+            "prefix sum",
+            "greedy",
+            "binary search",
+            "backtracking",
+            "recursion",
+            "divide and conquer",
+
+            // Advanced
+            "dp",
+            "trie",
+            "union find",
+            "topological sort"
+        ],
         default: [],
         required: true
     },
@@ -63,6 +92,22 @@ const problemSchema = new mongoose.Schema({
     problemCreator: {
         type: Schema.Types.ObjectId,
         ref: 'User',
+        required: true
+    },
+    inputFormat: {
+        type: String,
+        enum: [
+            "array",
+            "array+int",
+            "array+array",
+            "string",
+            "string+string",
+            "matrix",
+            "linkedlist",
+            "tree",
+            "graph",
+            "custom"
+        ],
         required: true
     },
     referenceSolution: [

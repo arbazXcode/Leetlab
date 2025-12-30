@@ -78,7 +78,7 @@ function Login() {
             <input
               type="email"
               placeholder="john@example.com"
-              className={`input input-bordered w-full bg-white/ vv10 text-white border-gray-600 ${
+              className={`input input-bordered w-full bg-white/10 text-white border-gray-600 ${
                 errors.email ? "border-red-500" : "focus:border-yellow-500"
               }`}
               {...register("email")}
