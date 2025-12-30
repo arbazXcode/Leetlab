@@ -1,203 +1,179 @@
-const mongoose = require("mongoose")
 const Problem = require("../models/problems.js");
 const User = require("../models/user.js");
-const { findById } = require("../models/user.js");
-const { getLanguageById, submitBatch, submitToken } = require('../utils/problemUtility.js');
-const Submission = require("../models/submission.js")
+const Submission = require("../models/submission.js");
+const {
+    getLanguageById,
+    submitBatch,
+    submitToken,
+} = require("../utils/problemUtility.js");
+
+/**
+ * CREATE PROBLEM (ADMIN)
+ */
 const createProblem = async (req, res) => {
-
-    const { title, description, difficulty, tags, visibleTestCases, hiddenTestCases, startCode
-        , problemCreator, referenceSolution
-    } = req.body
-
     try {
+        const {
+            title,
+            description,
+            difficulty,
+            tags,
+            visibleTestCases,
+            hiddenTestCases,
+            startCode,
+            referenceSolution,
+        } = req.body;
 
-        for (const { language, completeCode } of referenceSolution) {
-            //source code
-            //language_id
-            //stdin:
-            //expected_output;
-            const languageId = getLanguageById(language)
-
-            const submissions = visibleTestCases.map((testcase) => ({
-                source_code: completeCode,
-                language_id: languageId,
-                stdin: testcase.input,
-                expected_output: testcase.output
-            }))
-
-            const submitResult = await submitBatch(submissions)
-            const resultToken = submitResult.map((value) => value.token)
-
-            const testResult = await submitToken(resultToken)
-            // console.log(testResult);
-
-            for (const test of testResult) {
-                if (test.status_id != 3) {
-                    return res.status(400).send("Error occurred")
-                }
-            }
+        // basic validation
+        if (
+            !title ||
+            !description ||
+            !difficulty ||
+            !Array.isArray(visibleTestCases) ||
+            !Array.isArray(hiddenTestCases) ||
+            !Array.isArray(startCode) ||
+            !Array.isArray(referenceSolution)
+        ) {
+            return res.status(400).json({ message: "Invalid payload" });
         }
 
-
-        //we can store it in our DB
-        const userProblem = await Problem.create({
-            ...req.body,
-            problemCreator: req.user._id
-        })
-
-        res.status(201).json({
-            message: "Problem created successfully",
-            problem: req.body
+        const problem = await Problem.create({
+            title,
+            description,
+            difficulty,
+            tags,
+            visibleTestCases,
+            hiddenTestCases,
+            startCode,
+            referenceSolution,
+            problemCreator: req.user._id,
         });
 
+        return res.status(201).json({
+            message: "Problem created successfully",
+            problem,
+        });
     } catch (error) {
-        res.status(400).send("Error: " + error.message);
+        console.error("Create problem error:", error);
+        return res.status(500).json({
+            message: "Server error while creating problem",
+            error: error.message,
+        });
     }
 };
 
 
+/**
+ * UPDATE PROBLEM (ADMIN)
+ */
 const updateProblem = async (req, res) => {
-    const { id } = req.params
-
-    try {
-        if (!id)
-            return res.status(400).send("Missing Id")
-
-        const dsaProblem = await Problem.findById(id)
-        if (!dsaProblem)
-            return res.status(404).send("Id is not present in server")
-        const { title, description, difficulty, tags, visibleTestCases, hiddenTestCases, startCode
-            , problemCreator, referenceSolution
-        } = req.body
-
-        for (const { language, completeCode } of referenceSolution) {
-            //source code
-            //languageId
-            //stdin:
-            //expected_output;
-            const languageId = getLanguageById(language)
-
-            const submissions = visibleTestCases.map((testcase) => ({
-                source_code: completeCode,
-                language_id: languageId,
-                stdin: testcase.input,
-                expected_output: testcase.output
-            }))
-
-            const submitResult = await submitBatch(submissions)
-            const resultToken = submitResult.map((value) => value.token)
-
-            const testResult = await submitToken(resultToken)
-
-            for (const test of testResult) {
-                if (test.status_id != 3) {
-                    return res.status(400).send("Error occurred")
-                }
-            }
-        }
-
-        const newProblem = await Problem.findByIdAndUpdate(id, { ...req.body }, { runValidators: true, new: true })
-        res.status(200).send(newProblem)
-    } catch (error) {
-        res.status(500).send("Error" + error)
-    }
-};
-
-const deleteProblem = async (req, res) => {
-
-    const { pid } = req.params
-
-    try {
-        if (!pid)
-            return res.status(400).send("id missing")
-
-        const deletedProblem = await Problem.findByIdAndDelete(pid)
-
-        if (!deletedProblem)
-            return res.status(404).send("problem is missing")
-
-        res.status(200).send("SuccessFully deleted")
-    } catch (error) {
-        return res.status(500).send("Error" + error)
-    }
-};
-
-const getProblemById = async (req, res) => {
     try {
         const { id } = req.params;
+        if (!id) return res.status(400).json({ message: "Missing problem id" });
 
-        if (!id) {
-            return res.status(400).json({ message: "Problem ID is missing" });
+        const updated = await Problem.findByIdAndUpdate(
+            id,
+            { ...req.body },
+            { new: true, runValidators: true }
+        );
+
+        if (!updated)
+            return res.status(404).json({ message: "Problem not found" });
+
+        return res.status(200).json({
+            message: "Problem updated successfully",
+            problem: updated,
+        });
+    } catch (error) {
+        console.error("Update problem error:", error);
+        return res.status(500).json({
+            message: "Server error while updating problem",
+            error: error.message,
+        });
+    }
+};
+
+
+/**
+ * DELETE PROBLEM (ADMIN)
+ */
+const deleteProblem = async (req, res) => {
+    try {
+        const { pid } = req.params;
+
+        const deleted = await Problem.findByIdAndDelete(pid);
+        if (!deleted) {
+            return res.status(404).json({ message: "Problem not found" });
         }
 
-        const problem = await Problem.findById(id).select(
-            "_id title description difficulty tags visibleTestCases startCode referenceSolution"
-        );
+        res.status(200).json({ message: "Problem deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+/**
+ * GET PROBLEM BY ID
+ */
+const getProblemById = async (req, res) => {
+    try {
+        const problem = await Problem.findById(req.params.id);
 
         if (!problem) {
             return res.status(404).json({ message: "Problem not found" });
         }
 
-        return res.status(200).json(problem);
+        res.status(200).json(problem);
     } catch (error) {
-        console.error("Error fetching problem:", error);
-        return res.status(500).json({ message: "Server error", error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
-
+/**
+ * GET ALL PROBLEMS
+ */
 const getAllProblems = async (req, res) => {
-
     try {
-        //implement pagination ->do chatgpt
-        const getProblem = await Problem.find({}).select("_id title tags difficulty")
+        const problems = await Problem.find({}).select(
+            "_id title difficulty tags"
+        );
 
-        if (getProblem.length == 0)
-            return res.status(404).send("problem is missing")
-
-        res.status(200).send(getProblem)
+        res.status(200).json(problems);
     } catch (error) {
-        return res.status(500).send("Error" + error)
+        res.status(500).json({ message: error.message });
     }
 };
 
+/**
+ * GET SOLVED PROBLEMS BY USER
+ */
 const solvedAllProblemByUser = async (req, res) => {
     try {
-        const userId = req.user._id
-        const user = await User.findById(userId).populate({
+        const user = await User.findById(req.user._id).populate({
             path: "problemSolved",
-            select: "_id title difficulty tags"
-        })
-        res.status(200).send(user.problemSolved)
-
-    } catch (error) {
-        res.status(500).send("Server error")
-    }
-}
-
-const submittedProblem = async (req, res) => {
-    try {
-        const userId = req.user._id
-        const problemId = req.params.pid
-
-        // const ans = await Submission.find({ userId, problemId })
-        const ans = await Submission.find({
-            userId,
-            problemId
+            select: "_id title difficulty tags",
         });
 
-        if (ans.length == 0) {
-            return res.status(200).send("no submission present")
-        }
-
-        res.status(200).send(ans)
+        res.status(200).json(user.problemSolved);
     } catch (error) {
-        console.error("Error fetching submitted problems:", error);
-        res.status(500).send("Internal server error: " + error.message);
+        res.status(500).json({ message: error.message });
     }
+};
 
-}
+/**
+ * GET SUBMISSIONS OF USER FOR A PROBLEM
+ */
+const submittedProblem = async (req, res) => {
+    try {
+        const submissions = await Submission.find({
+            userId: req.user._id,
+            problemId: req.params.pid,
+        });
+
+        res.status(200).json(submissions);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports = {
     createProblem,
@@ -206,5 +182,5 @@ module.exports = {
     getProblemById,
     getAllProblems,
     solvedAllProblemByUser,
-    submittedProblem
+    submittedProblem,
 };

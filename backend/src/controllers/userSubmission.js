@@ -167,9 +167,6 @@ const runcode = async (req, res) => {
         res.status(500).send("Internal server error: " + error.message);
     }
 };
-
-
-
 module.exports = { submitCode, runcode }
 
 

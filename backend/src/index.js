@@ -12,6 +12,7 @@ const cors = require("cors")
 const mongoose = require("mongoose")
 
 
+
 // Middlewares
 app.use(cors({
     origin: "http://localhost:5173",
